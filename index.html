@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ID ও A4 প্রিন্ট">
+    <title>আইডি কার্ড ও ডকুমেন্ট প্রিন্ট মেকার</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%232563EB'/%3E%3Crect x='96' y='136' width='320' height='240' rx='28' fill='%23FFFFFF'/%3E%3Ccircle cx='186' cy='232' r='34' fill='%232563EB'/%3E%3Cpath d='M134 316c0-28 23-46 52-46s52 18 52 46' fill='%232563EB'/%3E%3Crect x='268' y='204' width='108' height='22' rx='11' fill='%2394A3B8'/%3E%3Crect x='268' y='246' width='84' height='18' rx='9' fill='%23CBD5E1'/%3E%3Crect x='268' y='284' width='96' height='18' rx='9' fill='%23CBD5E1'/%3E%3C/svg%3E">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
+        body {
+            font-family: 'Noto Sans Bengali', 'Hind Siliguri', 'SolaimanLipi', 'Kalpurush', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F1F5F9;
+            color: #1E293B;
+            margin: 0;
+            padding: 8px;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overscroll-behavior: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 392px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 7px;
+        }
+
+        .main-stage {
+            width: 100%;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .left-empty-space {
+            width: 10px;
+            flex-shrink: 0;
+        }
+
+        .a4-sheet-card {
+            flex: 1;
+            min-width: 0;
+            aspect-ratio: 8.266 / 11.69;
+            background-color: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            position: relative;
+            overflow: hidden;
+            padding: 4.277% 2.42% 1.711% 2.42%;
+        }
+
+        #a4-printable-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+        }
+
+        #a4-stack {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-number-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #334155;
+            background-color: rgba(241, 245, 249, 0.95);
+            border: 1px solid #CBD5E1;
+            padding: 2px 7px;
+            border-radius: 6px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .doc-image-wrapper {
+            position: relative;
+            border-radius: 4px;
+            transition: box-shadow 0.15s ease;
+            cursor: pointer;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .doc-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            border-radius: 4px;
+            display: block;
+            pointer-events: none;
+        }
+
+        .doc-image-selected {
+            box-shadow: 0 0 0 2px #2563EB, 0 5px 14px rgba(37, 99, 235, 0.18);
+        }
+
+        .remove-img-btn {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background-color: #EF4444;
+            color: #FFFFFF;
+            border: 1.5px solid #FFFFFF;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            cursor: pointer;
+            padding: 0;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .quick-pill {
+            position: absolute;
+            top: -9px;
+            left: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background-color: rgba(15, 23, 42, 0.92);
+            color: #FFFFFF;
+            padding: 3px 8px;
+            border-radius: 999px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            font-size: 10px;
+            font-weight: 700;
+            z-index: 25;
+        }
+
+        .quick-pill button {
+            background: none;
+            border: none;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 0 2px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .swap-row {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 0;
+            z-index: 15;
+        }
+
+        .swap-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .add-box-large {
+            width: 82%;
+            padding: 24px 8px;
+            border-radius: 12px;
+            border: 1.5px dashed #93C5FD;
+            background-color: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .right-panel {
+            width: 86px;
+            flex-shrink: 0;
+            background-color: #FFFFFF;
+            border-radius: 12px;
+            padding: 6px 5px;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .label-btn {
+            width: 100%;
+            min-height: 38px;
+            padding: 6px 4px;
+            border-radius: 9px;
+            border: 1px solid #CBD5E1;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .label-btn:hover {
+            background-color: #EFF6FF;
+            border-color: #2563EB;
+            color: #1D4ED8;
+        }
+
+        .label-btn-primary {
+            background-color: #2563EB;
+            border-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        .label-btn-primary:hover {
+            background-color: #1D4ED8;
+            color: #FFFFFF;
+        }
+
+        .label-btn-share {
+            background-color: #ECFDF5;
+            border-color: #6EE7B7;
+            color: #047857;
+        }
+
+        .label-btn-share:hover {
+            background-color: #10B981;
+            border-color: #10B981;
+            color: #FFFFFF;
+        }
+
+        .right-divider {
+            height: 1px;
+            width: 100%;
+            background-color: #E2E8F0;
+            margin: 1px 0;
+        }
+
+        .bottom-dock {
+            width: 100%;
+            background-color: #FFFFFF;
+            border-radius: 14px;
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+            padding: 9px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .page-strip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .page-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .page-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            min-height: 32px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #CBD5E1;
+            background-color: #F8FAFC;
+            color: #334155;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .page-chip.active {
+            background-color: #2563EB;
+            border-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        .page-chip-x {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: rgba(15, 23, 42, 0.14);
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .page-chip.active .page-chip-x {
+            background-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .dock-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            width: 100%;
+        }
+
+        input[type="range"].clean-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(to right, #2563EB 0%, #2563EB var(--progress, 50%), #E2E8F0 var(--progress, 50%), #E2E8F0 100%);
+            outline: none;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        input[type="range"].clean-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            background: #2563EB;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.4);
+            cursor: pointer;
+        }
+
+        .inch-box {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            padding: 0 8px;
+            height: 32px;
+            cursor: text;
+        }
+
+        .size-box {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            background-color: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 32px;
+        }
+
+        .size-num-input {
+            width: 48px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            color: #1E293B;
+            text-align: center;
+            background-color: #FFFFFF;
+            height: 100%;
+            border: none;
+            border-right: 1px solid #E2E8F0;
+            outline: none;
+            padding: 0 3px;
+        }
+
+        .size-unit-select {
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            color: #2563EB;
+            background: transparent;
+            border: none;
+            padding: 0 7px;
+            height: 100%;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #toast-box {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translate(-50%, -18px);
+            z-index: 60;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        #toast-box.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .toast-inner {
+            background-color: rgba(15, 23, 42, 0.94);
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+            white-space: nowrap;
+        }
+
+        #crop-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background-color: rgba(15, 23, 42, 0.86);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .crop-card {
+            background-color: #FFFFFF;
+            width: 100%;
+            max-width: 390px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 92dvh;
+        }
+
+        .crop-header {
+            padding: 8px 12px;
+            background-color: #F8FAFC;
+            border-bottom: 1px solid #F1F5F9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .crop-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #E2E8F0;
+            padding: 3px;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-width: 84%;
+        }
+
+        .crop-tab-active {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            background-color: #FFFFFF;
+            color: #2563EB;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .crop-tab-inactive {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            background: transparent;
+            color: #475569;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .crop-stage {
+            position: relative;
+            background-color: #0F172A;
+            flex: 1;
+            min-height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 8px;
+            user-select: none;
+        }
+
+        #crop-canvas {
+            max-width: 100%;
+            max-height: 46dvh;
+            touch-action: none;
+            cursor: move;
+            border-radius: 3px;
+        }
+
+        .crop-controls {
+            padding: 10px;
+            background-color: #FFFFFF;
+            border-top: 1px solid #F1F5F9;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ratio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .ratio-btn-active {
+            padding: 8px 6px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid #3B82F6;
+            background-color: #EFF6FF;
+            color: #1D4ED8;
+            cursor: pointer;
+        }
+
+        .ratio-btn-inactive {
+            padding: 8px 6px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid #E2E8F0;
+            background-color: #FFFFFF;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .crop-action-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .crop-tool-btn {
+            padding: 8px 10px;
+            border-radius: 8px;
+            background-color: #F1F5F9;
+            border: none;
+            color: #334155;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .crop-cancel-btn {
+            width: 34%;
+            padding: 10px;
+            border-radius: 9px;
+            border: 1px solid #CBD5E1;
+            background-color: #FFFFFF;
+            color: #475569;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .crop-save-btn {
+            width: 66%;
+            padding: 10px;
+            border-radius: 9px;
+            border: none;
+            background-color: #2563EB;
+            color: #FFFFFF;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-box">
+        <div class="toast-inner">
+            <span id="toast-text">সম্পন্ন হয়েছে</span>
+        </div>
+    </div>
+
+    <main id="app-container">
+        <input type="file" id="multi-file-input" accept="image/*,application/pdf,.pdf" multiple class="hidden" onchange="handleMultiFileSelect(event)">
+        <input type="file" id="single-file-input" accept="image/*,application/pdf,.pdf" class="hidden" onchange="handleSingleFileSelect(event)">
+
+        <div class="main-stage">
+            <div class="left-empty-space" aria-hidden="true"></div>
+
+            <section id="a4-sheet" class="a4-sheet-card" onclick="handleSheetBackgroundClick(event)"></section>
+
+            <aside class="right-panel" aria-label="টুলস ও সেভ/শেয়ার">
+                <label for="multi-file-input" onclick="event.stopPropagation()" class="label-btn label-btn-primary">ফাইল যোগ</label>
+                <button type="button" onclick="addNewA4Page()" class="label-btn">নতুন পেজ</button>
+                <button type="button" onclick="openCropModal()" class="label-btn">ক্রপ</button>
+
+                <div class="right-divider"></div>
+
+                <button type="button" onclick="downloadAllAsJPG()" class="label-btn">JPG সেভ</button>
+                <button type="button" onclick="downloadAsPDF()" class="label-btn">PDF সেভ</button>
+                <button type="button" onclick="shareAsJPG()" class="label-btn label-btn-share">JPG শেয়ার</button>
+                <button type="button" onclick="shareAsPDF()" class="label-btn label-btn-share">PDF শেয়ার</button>
+            </aside>
+        </div>
+
+        <section class="bottom-dock">
+            <div id="page-strip" class="page-strip"></div>
+
+            <div class="dock-row">
+                <span style="font-size: 11px; font-weight: 700; color: #475569; flex-shrink: 0;">প্রস্থ</span>
+                <div style="flex: 1; display: flex; align-items: center; min-width: 70px;">
+                    <input type="range" id="width-slider" min="1.5" max="7.866" step="0.01" value="3.37" class="clean-slider" oninput="updateWidthFromSlider(this.value)">
+                </div>
+                <div onclick="enableDirectInchEdit()" class="inch-box">
+                    <span id="inch-text" style="font-size: 11px; font-weight: 700; color: #1E293B; white-space: nowrap;">3.37 ইঞ্চি</span>
+                    <input type="number" id="inch-direct-input" min="1.5" max="7.866" step="0.01" value="3.37" onblur="commitDirectInchEdit()" onkeydown="if(event.key==='Enter') this.blur()" class="hidden" style="width: 54px; font-family: inherit; font-size: 11px; font-weight: 700; color: #2563EB; text-align: center; background: transparent; border: none; outline: none;">
+                </div>
+            </div>
+
+            <div class="dock-row">
+                <span style="font-size: 11px; font-weight: 700; color: #475569; flex-shrink: 0;">সাইজ</span>
+                <div style="flex: 1; display: flex; align-items: center; min-width: 60px;">
+                    <input type="range" id="quality-slider" min="10" max="100" step="5" value="100" class="clean-slider" oninput="updateDownloadQualityFromSlider(this.value)">
+                </div>
+                <div class="size-box">
+                    <input type="number" id="target-size-input" min="10" max="15000" step="any" placeholder="সাইজ" oninput="handleTargetSizeInput(this.value)" class="size-num-input hidden">
+                    <select id="target-size-unit" onchange="handleTargetUnitChange(this.value)" class="size-unit-select">
+                        <option value="ORIG" selected>অরিজিনাল</option>
+                        <option value="KB">KB</option>
+                        <option value="MB">MB</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="crop-modal" class="hidden">
+        <div class="crop-card">
+            <div class="crop-header">
+                <div id="crop-tabs-container" class="crop-tabs"></div>
+                <button onclick="closeCropModal()" style="padding: 5px 8px; background: none; border: none; color: #64748B; cursor: pointer; font-weight: 700;">✕</button>
+            </div>
+            <div class="crop-stage">
+                <canvas id="crop-canvas"></canvas>
+            </div>
+            <div class="crop-controls">
+                <div class="ratio-grid">
+                    <button id="ratio-lock-btn" onclick="setCropRatioMode(true)" class="ratio-btn-active">আইডি অনুপাত (৮৫.৬×৫৪)</button>
+                    <button id="ratio-free-btn" onclick="setCropRatioMode(false)" class="ratio-btn-inactive">ফ্রি সাইজ</button>
+                </div>
+                <div class="crop-action-row">
+                    <button onclick="rotateCropImage(-90)" class="crop-tool-btn">↺ ৯০°</button>
+                    <button onclick="rotateCropImage(90)" class="crop-tool-btn">↻ ৯০°</button>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 5px; padding-left: 2px;">
+                        <span style="font-size: 10.5px; color: #64748B;">সোজা:</span>
+                        <input type="range" id="crop-tilt-slider" min="-20" max="20" step="0.5" value="0" oninput="updateCropTilt(this.value)" style="width: 100%; accent-color: #2563EB;">
+                        <span id="crop-tilt-val" style="font-size: 10.5px; font-weight: 700; color: #2563EB; width: 26px; text-align: right;">0°</span>
+                    </div>
+                </div>
+                <div class="crop-action-row">
+                    <button onclick="closeCropModal()" class="crop-cancel-btn">বাতিল</button>
+                    <button onclick="applyCrop()" class="crop-save-btn">ক্রপ সেভ করুন</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+        }
+
+        const A4_FULL_WIDTH_IN = 8.266;
+        const A4_FULL_HEIGHT_IN = 11.69;
+        const MARGIN_TOP_IN = 0.50;
+        const MARGIN_BOTTOM_IN = 0.20;
+        const MARGIN_LEFT_IN = 0.20;
+        const MARGIN_RIGHT_IN = 0.20;
+
+        const PRINTABLE_WIDTH_IN = Number((A4_FULL_WIDTH_IN - MARGIN_LEFT_IN - MARGIN_RIGHT_IN).toFixed(3));
+        const PRINTABLE_HEIGHT_IN = Number((A4_FULL_HEIGHT_IN - MARGIN_TOP_IN - MARGIN_BOTTOM_IN).toFixed(3));
+
+        function createPageObject(widthInches = 3.37) {
+            return {
+                id: 'page_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                widthInches: Math.min(PRINTABLE_WIDTH_IN, Math.max(1.5, widthInches)),
+                images: []
+            };
+        }
+
+        const firstPage = createPageObject(3.37);
+
+        const state = {
+            pages: [firstPage],
+            activePageId: firstPage.id,
+            sizeMode: 'ORIG',
+            sliderPercent: 100,
+            targetKB: null,
+            selectedId: null,
+            replaceTargetId: null
+        };
+
+        function getActivePage() {
+            let page = state.pages.find(p => p.id === state.activePageId);
+            if (!page) {
+                page = state.pages[0];
+                state.activePageId = page.id;
+            }
+            return page;
+        }
+
+        function getActivePageIndex() {
+            return state.pages.findIndex(p => p.id === state.activePageId);
+        }
+
+        const cropper = {
+            imageId: null,
+            imgObj: null,
+            rotate: 0,
+            tilt: 0,
+            lockRatio: true,
+            idAspectRatio: 85.6 / 54,
+            box: { x: 20, y: 20, w: 220, h: 138 },
+            dragging: null,
+            startX: 0,
+            startY: 0,
+            startBox: null
+        };
+
+        let toastTimeout;
+        function showToast(message) {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-text').textContent = message;
+            box.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                box.classList.remove('show');
+            }, 2400);
+        }
+
+        function renderPageStrip() {
+            const strip = document.getElementById('page-strip');
+            const total = state.pages.length;
+
+            strip.innerHTML = state.pages.map((page, idx) => {
+                const isActive = page.id === state.activePageId;
+                const countText = page.images.length > 0 ? ` (${page.images.length})` : '';
+                const delBtn = total > 1
+                    ? `<span onclick="removeA4Page('${page.id}', event)" class="page-chip-x">×</span>`
+                    : '';
+
+                return `
+                    <button type="button" onclick="switchA4Page('${page.id}')" class="page-chip ${isActive ? 'active' : ''}">
+                        <span>পেজ ${idx + 1}${countText}</span>
+                        ${delBtn}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function addNewA4Page(switchImmediately = true) {
+            const current = getActivePage();
+            const newPage = createPageObject(current.widthInches);
+            state.pages.push(newPage);
+            if (switchImmediately) {
+                state.activePageId = newPage.id;
+                state.selectedId = null;
+                syncWidthSliderUI(newPage.widthInches);
+            }
+            renderPageStrip();
+            renderA4Sheet();
+            if (switchImmediately) {
+                showToast(`পেজ ${state.pages.length} যুক্ত হয়েছে`);
+            }
+            return newPage;
+        }
+
+        function switchA4Page(pageId) {
+            const target = state.pages.find(p => p.id === pageId);
+            if (!target) return;
+            state.activePageId = target.id;
+            state.selectedId = target.images.length ? target.images[0].id : null;
+            syncWidthSliderUI(target.widthInches);
+            renderPageStrip();
+            renderA4Sheet();
+        }
+
+        function removeA4Page(pageId, e) {
+            if (e) e.stopPropagation();
+            if (state.pages.length <= 1) return;
+
+            const idx = state.pages.findIndex(p => p.id === pageId);
+            if (idx === -1) return;
+
+            state.pages.splice(idx, 1);
+            if (state.activePageId === pageId) {
+                const nextPage = state.pages[Math.max(0, idx - 1)];
+                state.activePageId = nextPage.id;
+                state.selectedId = nextPage.images.length ? nextPage.images[0].id : null;
+                syncWidthSliderUI(nextPage.widthInches);
+            }
+            renderPageStrip();
+            renderA4Sheet();
+            showToast('পেজ মুছে ফেলা হয়েছে');
+        }
+
+        function formatInchDisplay(val) {
+            return `${Number(val.toFixed(2))} ইঞ্চি`;
+        }
+
+        function syncWidthSliderUI(val) {
+            const slider = document.getElementById('width-slider');
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            const clamped = Math.min(max, Math.max(min, val));
+            const percent = ((clamped - min) / (max - min)) * 100;
+            slider.value = clamped;
+            slider.style.setProperty('--progress', `${percent}%`);
+            document.getElementById('inch-text').textContent = formatInchDisplay(clamped);
+            document.getElementById('inch-direct-input').value = Number(clamped.toFixed(2));
+        }
+
+        function updateWidthFromSlider(rawVal) {
+            const num = parseFloat(rawVal);
+            if (isNaN(num)) return;
+            const page = getActivePage();
+            page.widthInches = num;
+            syncWidthSliderUI(num);
+            renderA4Sheet();
+        }
+
+        function enableDirectInchEdit() {
+            const textEl = document.getElementById('inch-text');
+            const inputEl = document.getElementById('inch-direct-input');
+            textEl.classList.add('hidden');
+            inputEl.classList.remove('hidden');
+            inputEl.focus();
+            inputEl.select();
+        }
+
+        function commitDirectInchEdit() {
+            const textEl = document.getElementById('inch-text');
+            const inputEl = document.getElementById('inch-direct-input');
+            let val = parseFloat(inputEl.value);
+            if (isNaN(val) || val < 1.50) val = 1.50;
+            if (val > PRINTABLE_WIDTH_IN) val = PRINTABLE_WIDTH_IN;
+
+            const page = getActivePage();
+            page.widthInches = val;
+            syncWidthSliderUI(val);
+            inputEl.classList.add('hidden');
+            textEl.classList.remove('hidden');
+            renderA4Sheet();
+        }
+
+        function syncQualitySliderVisual(percentVal) {
+            const slider = document.getElementById('quality-slider');
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            const clamped = Math.min(max, Math.max(min, percentVal));
+            const progress = ((clamped - min) / (max - min)) * 100;
+            slider.value = clamped;
+            slider.style.setProperty('--progress', `${progress}%`);
+        }
+
+        function updateDownloadQualityFromSlider(rawVal) {
+            const pct = parseInt(rawVal, 10);
+            if (isNaN(pct)) return;
+            state.sliderPercent = pct;
+            syncQualitySliderVisual(pct);
+
+            const inputEl = document.getElementById('target-size-input');
+            const unitEl = document.getElementById('target-size-unit');
+
+            if (pct >= 100) {
+                state.sizeMode = 'ORIG';
+                state.targetKB = null;
+                unitEl.value = 'ORIG';
+                unitEl.style.color = '#2563EB';
+                inputEl.classList.add('hidden');
+            } else {
+                const estKB = Math.round(50 + ((pct - 10) / 85) * 900);
+                state.sizeMode = 'KB';
+                state.targetKB = estKB;
+                unitEl.value = 'KB';
+                unitEl.style.color = '#334155';
+                inputEl.classList.remove('hidden');
+                inputEl.value = estKB;
+            }
+        }
+
+        function handleTargetUnitChange(newUnit) {
+            const inputEl = document.getElementById('target-size-input');
+            const unitEl = document.getElementById('target-size-unit');
+            state.sizeMode = newUnit;
+
+            if (newUnit === 'ORIG') {
+                state.targetKB = null;
+                state.sliderPercent = 100;
+                syncQualitySliderVisual(100);
+                inputEl.classList.add('hidden');
+                unitEl.style.color = '#2563EB';
+            } else if (newUnit === 'KB') {
+                inputEl.classList.remove('hidden');
+                unitEl.style.color = '#334155';
+                let val = parseFloat(inputEl.value);
+                if (isNaN(val) || val <= 0) val = 250;
+                inputEl.value = val;
+                state.targetKB = val;
+            } else if (newUnit === 'MB') {
+                inputEl.classList.remove('hidden');
+                unitEl.style.color = '#334155';
+                let val = parseFloat(inputEl.value);
+                if (isNaN(val) || val <= 0) val = 1;
+                inputEl.value = val;
+                state.targetKB = val * 1024;
+            }
+        }
+
+        function handleTargetSizeInput(rawStr) {
+            const val = parseFloat(rawStr);
+            if (isNaN(val) || val <= 0) {
+                state.targetKB = null;
+                return;
+            }
+            state.targetKB = state.sizeMode === 'MB' ? val * 1024 : val;
+        }
+
+        function triggerMultiUpload(e) {
+            if (e) e.stopPropagation();
+            const input = document.getElementById('multi-file-input');
+            if (!input) return;
+            try {
+                input.value = '';
+            } catch (_) {}
+            if (typeof input.showPicker === 'function') {
+                try {
+                    input.showPicker();
+                    return;
+                } catch (_) {}
+            }
+            input.click();
+        }
+
+        function readImageFileAsItem(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        resolve([{
+                            id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                            rawSrc: e.target.result,
+                            src: e.target.result,
+                            aspectRatio: img.width / img.height
+                        }]);
+                    };
+                    img.onerror = () => resolve([]);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve([]);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function extractPagesFromPDF(file) {
+            if (!window.pdfjsLib) {
+                showToast('PDF রিডার লোড হয়নি');
+                return [];
+            }
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const extractedItems = [];
+
+                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                    const pdfPage = await pdfDoc.getPage(pageNum);
+                    const viewport = pdfPage.getViewport({ scale: 2.5 });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(viewport.width);
+                    canvas.height = Math.round(viewport.height);
+                    const ctx = canvas.getContext('2d');
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    await pdfPage.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+                    extractedItems.push({
+                        id: 'pdf_' + Date.now() + '_' + pageNum + '_' + Math.random().toString(36).slice(2, 6),
+                        rawSrc: dataUrl,
+                        src: dataUrl,
+                        aspectRatio: canvas.width / canvas.height
+                    });
+                }
+
+                return extractedItems;
+            } catch (err) {
+                console.error(err);
+                showToast('PDF পড়তে সমস্যা হয়েছে');
+                return [];
+            }
+        }
+
+        async function handleMultiFileSelect(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            const hasPDF = files.some(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+            if (hasPDF) showToast('PDF প্রসেস হচ্ছে...');
+
+            let targetPage = getActivePage();
+            let addedCount = 0;
+
+            for (const file of files) {
+                const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                if (isPDF) {
+                    const pdfPageItems = await extractPagesFromPDF(file);
+                    pdfPageItems.forEach((item, idx) => {
+                        if (idx === 0) {
+                            if (targetPage.images.length === 0) {
+                                targetPage.widthInches = PRINTABLE_WIDTH_IN;
+                            }
+                            targetPage.images.push(item);
+                            state.selectedId = item.id;
+                        } else {
+                            const extraPage = createPageObject(PRINTABLE_WIDTH_IN);
+                            extraPage.images.push(item);
+                            state.pages.push(extraPage);
+                        }
+                        addedCount++;
+                    });
+                } else if (file.type.startsWith('image/')) {
+                    const imgItems = await readImageFileAsItem(file);
+                    imgItems.forEach(item => {
+                        targetPage.images.push(item);
+                        state.selectedId = item.id;
+                        addedCount++;
+                    });
+                }
+            }
+
+            syncWidthSliderUI(getActivePage().widthInches);
+            renderPageStrip();
+            renderA4Sheet();
+
+            if (addedCount > 0) showToast(`${addedCount}টি আইটেম যুক্ত হয়েছে`);
+            event.target.value = '';
+        }
+
+        function triggerSingleReplace(id, e) {
+            if (e) e.stopPropagation();
+            state.replaceTargetId = id;
+            const input = document.getElementById('single-file-input');
+            input.value = '';
+            input.click();
+        }
+
+        async function handleSingleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            let items = [];
+            if (isPDF) items = await extractPagesFromPDF(file);
+            else if (file.type.startsWith('image/')) items = await readImageFileAsItem(file);
+
+            if (items.length > 0) {
+                const page = getActivePage();
+                const target = page.images.find(item => item.id === state.replaceTargetId);
+                if (target) {
+                    target.rawSrc = items[0].rawSrc;
+                    target.src = items[0].src;
+                    target.aspectRatio = items[0].aspectRatio;
+                    state.selectedId = target.id;
+                    renderA4Sheet();
+                    showToast('পরিবর্তন সম্পন্ন হয়েছে');
+                }
+            }
+            event.target.value = '';
+        }
+
+        function removeImageById(id, e) {
+            if (e) e.stopPropagation();
+            const page = getActivePage();
+            const idx = page.images.findIndex(item => item.id === id);
+            if (idx === -1) return;
+
+            page.images.splice(idx, 1);
+            if (state.selectedId === id) {
+                state.selectedId = page.images.length ? page.images[Math.max(0, idx - 1)].id : null;
+            }
+            renderPageStrip();
+            renderA4Sheet();
+            showToast('বাদ দেওয়া হয়েছে');
+        }
+
+        function swapAdjacentImages(indexA, indexB, e) {
+            if (e) e.stopPropagation();
+            const page = getActivePage();
+            if (indexA < 0 || indexB >= page.images.length) return;
+            const temp = page.images[indexA];
+            page.images[indexA] = page.images[indexB];
+            page.images[indexB] = temp;
+            renderA4Sheet();
+            showToast('অবস্থান পরিবর্তন হয়েছে');
+        }
+
+        function selectImageById(id, e) {
+            if (e) e.stopPropagation();
+            state.selectedId = id;
+            renderA4Sheet();
+        }
+
+        function handleSheetBackgroundClick(e) {
+            if (e.target.id === 'a4-sheet' || e.target.id === 'a4-stack' || e.target.id === 'a4-printable-area') {
+                state.selectedId = null;
+                renderA4Sheet();
+            }
+        }
+
+        function getComputedImageDimensionsInches(aspectRatio, pageWidthInches) {
+            let wIn = Math.min(PRINTABLE_WIDTH_IN, Math.max(1.50, pageWidthInches));
+            let hIn = wIn / aspectRatio;
+            if (hIn > PRINTABLE_HEIGHT_IN) {
+                hIn = PRINTABLE_HEIGHT_IN;
+                wIn = hIn * aspectRatio;
+            }
+            return { wIn, hIn };
+        }
+
+        function renderA4Sheet() {
+            const sheet = document.getElementById('a4-sheet');
+            const page = getActivePage();
+            const pageIdx = getActivePageIndex();
+            const count = page.images.length;
+            const gapPx = count > 3 ? 4 : (page.widthInches > 5.2 ? 6 : 8);
+
+            let itemsHTML = '';
+            page.images.forEach((item, index) => {
+                const isSelected = state.selectedId === item.id;
+                const { wIn } = getComputedImageDimensionsInches(item.aspectRatio, page.widthInches);
+                const widthPercent = Math.min(100, (wIn / PRINTABLE_WIDTH_IN) * 100);
+
+                itemsHTML += `
+                    <div
+                        onclick="selectImageById('${item.id}', event)"
+                        style="width: ${widthPercent}%; aspect-ratio: ${item.aspectRatio};"
+                        class="doc-image-wrapper ${isSelected ? 'doc-image-selected' : ''}"
+                    >
+                        <img src="${item.src}" alt="ডকুমেন্ট ${index + 1}" />
+
+                        <button
+                            onclick="removeImageById('${item.id}', event)"
+                            class="remove-img-btn"
+                        >✕</button>
+                    </div>
+                `;
+
+                if (index < count - 1) {
+                    itemsHTML += `
+                        <div class="swap-row">
+                            <button onclick="swapAdjacentImages(${index}, ${index + 1}, event)" class="swap-btn">⇅</button>
+                        </div>
+                    `;
+                }
+            });
+
+            const addBoxHTML = count === 0 ? `
+                <label for="multi-file-input" onclick="event.stopPropagation()" class="add-box-large">
+                    <span style="font-size: 12px; font-weight: 700; color: #2563EB;">ফাইল যোগ</span>
+                    <span style="font-size: 9.5px; color: #64748B;">উপরে 0.5" • বাকি 0.2" মার্জিন</span>
+                </label>
+            ` : '';
+
+            const pageNumberLabel = `<div class="page-number-badge">পেজ ${pageIdx + 1}/${state.pages.length}</div>`;
+            const stackJustify = count === 0 ? 'center' : 'flex-start';
+
+            sheet.innerHTML = `
+                <div id="a4-printable-area">
+                    ${pageNumberLabel}
+                    <div id="a4-stack" style="justify-content: ${stackJustify}; gap: ${gapPx}px;">
+                        ${itemsHTML}
+                        ${addBoxHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openCropModal(preferredId, e) {
+            if (e) e.stopPropagation();
+            const page = getActivePage();
+            if (!page.images.length) {
+                showToast('আগে ফাইল যোগ করুন');
+                return;
+            }
+            let target = page.images.find(img => img.id === (preferredId || state.selectedId)) || page.images[0];
+            cropper.imageId = target.id;
+            state.selectedId = target.id;
+            updateCropModalTabs();
+            loadCropperImage(target.id);
+            document.getElementById('crop-modal').classList.remove('hidden');
+        }
+
+        function switchCropTab(id) {
+            cropper.imageId = id;
+            state.selectedId = id;
+            updateCropModalTabs();
+            loadCropperImage(id);
+        }
+
+        function updateCropModalTabs() {
+            const page = getActivePage();
+            document.getElementById('crop-tabs-container').innerHTML = page.images.map((item, idx) => `
+                <button onclick="switchCropTab('${item.id}')" class="${cropper.imageId === item.id ? 'crop-tab-active' : 'crop-tab-inactive'}">আইটেম ${idx + 1}</button>
+            `).join('');
+        }
+
+        function loadCropperImage(id) {
+            const page = getActivePage();
+            const item = page.images.find(img => img.id === id);
+            if (!item) return;
+            cropper.rotate = 0;
+            cropper.tilt = 0;
+            document.getElementById('crop-tilt-slider').value = 0;
+            document.getElementById('crop-tilt-val').textContent = '0°';
+            const img = new Image();
+            img.onload = function() {
+                cropper.imgObj = img;
+                setCropRatioMode(true, false);
+                initCropCanvas();
+            };
+            img.src = item.rawSrc;
+        }
+
+        function setCropRatioMode(lock, redraw = true) {
+            cropper.lockRatio = lock;
+            document.getElementById('ratio-lock-btn').className = lock ? 'ratio-btn-active' : 'ratio-btn-inactive';
+            document.getElementById('ratio-free-btn').className = !lock ? 'ratio-btn-active' : 'ratio-btn-inactive';
+            if (redraw) initCropCanvas();
+        }
+
+        function closeCropModal() {
+            document.getElementById('crop-modal').classList.add('hidden');
+            renderA4Sheet();
+        }
+
+        function rotateCropImage(deg) {
+            cropper.rotate = (cropper.rotate + deg + 360) % 360;
+            initCropCanvas();
+        }
+
+        function updateCropTilt(val) {
+            cropper.tilt = parseFloat(val);
+            document.getElementById('crop-tilt-val').textContent = `${val}°`;
+            drawCropCanvas();
+        }
+
+        function getRotatedBounds() {
+            const img = cropper.imgObj;
+            const isSwapped = cropper.rotate === 90 || cropper.rotate === 270;
+            return { w: isSwapped ? img.height : img.width, h: isSwapped ? img.width : img.height };
+        }
+
+        function initCropCanvas() {
+            const canvas = document.getElementById('crop-canvas');
+            const bounds = getRotatedBounds();
+            const maxW = Math.min(window.innerWidth - 40, 365);
+            const maxH = window.innerHeight * 0.46;
+            const scale = Math.min(maxW / bounds.w, maxH / bounds.h);
+            canvas.width = Math.round(bounds.w * scale);
+            canvas.height = Math.round(bounds.h * scale);
+
+            if (cropper.lockRatio) {
+                let boxW = canvas.width * 0.84;
+                let boxH = boxW / cropper.idAspectRatio;
+                if (boxH > canvas.height * 0.84) {
+                    boxH = canvas.height * 0.84;
+                    boxW = boxH * cropper.idAspectRatio;
+                }
+                cropper.box = { x: (canvas.width - boxW) / 2, y: (canvas.height - boxH) / 2, w: boxW, h: boxH };
+            } else {
+                const boxW = canvas.width * 0.86;
+                const boxH = canvas.height * 0.82;
+                cropper.box = { x: (canvas.width - boxW) / 2, y: Math.max(8, (canvas.height - boxH) / 2), w: boxW, h: boxH };
+            }
+            drawCropCanvas();
+        }
+
+        function drawRotatedSource(ctx, targetW, targetH) {
+            const img = cropper.imgObj;
+            ctx.save();
+            ctx.translate(targetW / 2, targetH / 2);
+            ctx.rotate(((cropper.rotate + cropper.tilt) * Math.PI) / 180);
+            const isSwapped = cropper.rotate === 90 || cropper.rotate === 270;
+            const drawW = isSwapped ? targetH : targetW;
+            const drawH = isSwapped ? targetW : targetH;
+            ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+            ctx.restore();
+        }
+
+        function drawCropCanvas() {
+            const canvas = document.getElementById('crop-canvas');
+            const ctx = canvas.getContext('2d');
+            const { x, y, w, h } = cropper.box;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRotatedSource(ctx, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.62)';
+            ctx.fillRect(0, 0, canvas.width, y);
+            ctx.fillRect(0, y + h, canvas.width, canvas.height - (y + h));
+            ctx.fillRect(0, y, x, h);
+            ctx.fillRect(x + w, y, canvas.width - (x + w), h);
+
+            ctx.strokeStyle = '#38BDF8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+
+            const handles = [[x, y], [x + w, y], [x, y + h], [x + w, y + h]];
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#2563EB';
+            ctx.lineWidth = 2;
+            handles.forEach(([hx, hy]) => {
+                ctx.beginPath();
+                ctx.arc(hx, hy, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        function getPointerPos(e) {
+            const canvas = document.getElementById('crop-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+        }
+
+        function onCropDown(e) {
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const { x, y, w, h } = cropper.box;
+            const hitR = 22;
+            if (Math.hypot(pos.x - x, pos.y - y) < hitR) cropper.dragging = 'tl';
+            else if (Math.hypot(pos.x - (x + w), pos.y - y) < hitR) cropper.dragging = 'tr';
+            else if (Math.hypot(pos.x - x, pos.y - (y + h)) < hitR) cropper.dragging = 'bl';
+            else if (Math.hypot(pos.x - (x + w), pos.y - (y + h)) < hitR) cropper.dragging = 'br';
+            else if (pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h) cropper.dragging = 'move';
+            else cropper.dragging = null;
+            cropper.startX = pos.x;
+            cropper.startY = pos.y;
+            cropper.startBox = { ...cropper.box };
+        }
+
+        function onCropMove(e) {
+            if (!cropper.dragging) return;
+            e.preventDefault();
+            const canvas = document.getElementById('crop-canvas');
+            const pos = getPointerPos(e);
+            const dx = pos.x - cropper.startX;
+            const dy = pos.y - cropper.startY;
+            const sb = cropper.startBox;
+            const minSize = 40;
+
+            if (cropper.dragging === 'move') {
+                cropper.box.x = Math.max(0, Math.min(canvas.width - sb.w, sb.x + dx));
+                cropper.box.y = Math.max(0, Math.min(canvas.height - sb.h, sb.y + dy));
+            } else if (cropper.lockRatio) {
+                const ratio = cropper.idAspectRatio;
+                let newW = (cropper.dragging === 'br' || cropper.dragging === 'tr') ? sb.w + dx : sb.w - dx;
+                newW = Math.max(minSize, newW);
+                let newH = newW / ratio;
+                let newX = (cropper.dragging === 'tl' || cropper.dragging === 'bl') ? sb.x + (sb.w - newW) : sb.x;
+                let newY = (cropper.dragging === 'tl' || cropper.dragging === 'tr') ? sb.y + (sb.h - newH) : sb.y;
+                if (newX >= 0 && newY >= 0 && newX + newW <= canvas.width && newY + newH <= canvas.height) {
+                    cropper.box = { x: newX, y: newY, w: newW, h: newH };
+                }
+            } else {
+                let newX = sb.x, newY = sb.y, newW = sb.w, newH = sb.h;
+                if (cropper.dragging.includes('r')) newW = Math.max(minSize, sb.w + dx);
+                if (cropper.dragging.includes('l')) {
+                    const shift = Math.min(sb.w - minSize, dx);
+                    newX = sb.x + shift;
+                    newW = sb.w - shift;
+                }
+                if (cropper.dragging.includes('b')) newH = Math.max(minSize, sb.h + dy);
+                if (cropper.dragging.includes('t')) {
+                    const shift = Math.min(sb.h - minSize, dy);
+                    newY = sb.y + shift;
+                    newH = sb.h - shift;
+                }
+                if (newX >= 0 && newY >= 0 && newX + newW <= canvas.width && newY + newH <= canvas.height) {
+                    cropper.box = { x: newX, y: newY, w: newW, h: newH };
+                }
+            }
+            drawCropCanvas();
+        }
+
+        function onCropUp() {
+            cropper.dragging = null;
+        }
+
+        function applyCrop() {
+            const displayCanvas = document.getElementById('crop-canvas');
+            const bounds = getRotatedBounds();
+            const scaleX = bounds.w / displayCanvas.width;
+            const scaleY = bounds.h / displayCanvas.height;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = bounds.w;
+            tempCanvas.height = bounds.h;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillRect(0, 0, bounds.w, bounds.h);
+            drawRotatedSource(tempCtx, bounds.w, bounds.h);
+
+            const sx = Math.round(cropper.box.x * scaleX);
+            const sy = Math.round(cropper.box.y * scaleY);
+            const sw = Math.max(20, Math.round(cropper.box.w * scaleX));
+            const sh = Math.max(20, Math.round(cropper.box.h * scaleY));
+
+            const outAspect = sw / sh;
+            const outW = 1400;
+            const outH = Math.round(outW / outAspect);
+
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = outW;
+            outCanvas.height = outH;
+            outCanvas.getContext('2d').drawImage(tempCanvas, sx, sy, sw, sh, 0, 0, outW, outH);
+
+            const page = getActivePage();
+            const target = page.images.find(item => item.id === cropper.imageId);
+            if (target) {
+                target.src = outCanvas.toDataURL('image/jpeg', 0.96);
+                target.aspectRatio = outAspect;
+            }
+            closeCropModal();
+            showToast('ক্রপ সম্পন্ন হয়েছে');
+        }
+
+        function loadImageAsync(src) {
+            return new Promise((resolve) => {
+                if (!src) return resolve(null);
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
+        }
+
+        async function buildA4CanvasAtDPI(dpi, pageObj) {
+            const A4_W = Math.round(A4_FULL_WIDTH_IN * dpi);
+            const A4_H = Math.round(A4_FULL_HEIGHT_IN * dpi);
+            const topPx = Math.round(MARGIN_TOP_IN * dpi);
+            const bottomPx = Math.round(MARGIN_BOTTOM_IN * dpi);
+            const leftPx = Math.round(MARGIN_LEFT_IN * dpi);
+            const rightPx = Math.round(MARGIN_RIGHT_IN * dpi);
+
+            const printableH = A4_H - topPx - bottomPx;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = A4_W;
+            canvas.height = A4_H;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, A4_W, A4_H);
+
+            const loadedItems = [];
+            for (const item of pageObj.images) {
+                const img = await loadImageAsync(item.src);
+                if (img) loadedItems.push({ img, aspectRatio: item.aspectRatio });
+            }
+            if (!loadedItems.length) return canvas;
+
+            const gapIn = loadedItems.length > 1 ? (loadedItems.length > 3 ? 0.14 : 0.22) : 0;
+            const gapPx = Math.round(gapIn * dpi);
+
+            let blocks = loadedItems.map(({ img, aspectRatio }) => {
+                const { wIn, hIn } = getComputedImageDimensionsInches(aspectRatio, pageObj.widthInches);
+                return { img, wPx: wIn * dpi, hPx: hIn * dpi };
+            });
+
+            const totalGapsPx = gapPx * (blocks.length - 1);
+            const rawTotalH = blocks.reduce((sum, b) => sum + b.hPx, 0) + totalGapsPx;
+
+            if (rawTotalH > printableH) {
+                const availForImages = Math.max(40, printableH - totalGapsPx);
+                const rawImagesOnlyH = blocks.reduce((sum, b) => sum + b.hPx, 0);
+                const shrinkRatio = availForImages / rawImagesOnlyH;
+                blocks = blocks.map(b => ({ img: b.img, wPx: b.wPx * shrinkRatio, hPx: b.hPx * shrinkRatio }));
+            }
+
+            let currentY = topPx;
+            blocks.forEach((b) => {
+                const itemW = Math.round(b.wPx);
+                const itemH = Math.round(b.hPx);
+                const centerX = Math.max(leftPx, Math.min(A4_W - rightPx - itemW, Math.round((A4_W - itemW) / 2)));
+                ctx.drawImage(b.img, centerX, currentY, itemW, itemH);
+                currentY += itemH + gapPx;
+            });
+
+            return canvas;
+        }
+
+        function canvasToBlobAsync(canvas, quality) {
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+            });
+        }
+
+        async function generatePageOptimizedResult(pageObj, perPageTargetKB = null) {
+            if (state.sizeMode === 'ORIG' || !perPageTargetKB || perPageTargetKB <= 0) {
+                const canvas = await buildA4CanvasAtDPI(300, pageObj);
+                const blob = await canvasToBlobAsync(canvas, 0.96);
+                return { blob, widthPx: canvas.width, heightPx: canvas.height, actualKB: Math.max(1, Math.round(blob.size / 1024)) };
+            }
+
+            const targetBytes = perPageTargetKB * 1024;
+            let dpi = perPageTargetKB <= 120 ? 115 : (perPageTargetKB <= 350 ? 165 : (perPageTargetKB <= 900 ? 220 : 300));
+            let canvas = await buildA4CanvasAtDPI(dpi, pageObj);
+            let low = 0.08, high = 0.96;
+            let bestBlob = await canvasToBlobAsync(canvas, 0.75);
+
+            for (let i = 0; i < 7; i++) {
+                const mid = (low + high) / 2;
+                const candidate = await canvasToBlobAsync(canvas, mid);
+                if (!candidate) break;
+                bestBlob = candidate;
+                if (candidate.size > targetBytes) high = mid;
+                else low = mid;
+            }
+
+            return { blob: bestBlob, widthPx: canvas.width, heightPx: canvas.height, actualKB: Math.max(1, Math.round(bestBlob.size / 1024)) };
+        }
+
+        async function buildMultiPageOfflineA4PDFBlob(pageResults) {
+            const encoder = new TextEncoder();
+            const pageW = '595.28';
+            const pageH = '841.89';
+            const N = pageResults.length;
+
+            const totalObjects = 2 + N * 3;
+            const kidsRefs = [];
+            for (let i = 0; i < N; i++) {
+                kidsRefs.push(`${3 + i * 3} 0 R`);
+            }
+
+            const chunks = [];
+            const offsets = new Array(totalObjects + 1).fill(0);
+            let currentOffset = 0;
+
+            function pushBytes(uint8Arr) {
+                chunks.push(uint8Arr);
+                currentOffset += uint8Arr.length;
+            }
+
+            function pushText(str) {
+                pushBytes(encoder.encode(str));
+            }
+
+            pushText('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n');
+
+            offsets[1] = currentOffset;
+            pushText('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+            offsets[2] = currentOffset;
+            pushText(`2 0 obj\n<< /Type /Pages /Kids [${kidsRefs.join(' ')}] /Count ${N} >>\nendobj\n`);
+
+            for (let i = 0; i < N; i++) {
+                const { blob, widthPx, heightPx } = pageResults[i];
+                const jpegBytes = new Uint8Array(await blob.arrayBuffer());
+
+                const pageObjNum = 3 + i * 3;
+                const imgObjNum = pageObjNum + 1;
+                const contentObjNum = pageObjNum + 2;
+
+                const contentStream = `q\n${pageW} 0 0 ${pageH} 0 0 cm\n/Im1 Do\nQ\n`;
+
+                offsets[pageObjNum] = currentOffset;
+                pushText(`${pageObjNum} 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im1 ${imgObjNum} 0 R >> >> /MediaBox [0 0 ${pageW} ${pageH}] /Contents ${contentObjNum} 0 R >>\nendobj\n`);
+
+                offsets[imgObjNum] = currentOffset;
+                pushText(`${imgObjNum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${widthPx} /Height ${heightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);
+                pushBytes(jpegBytes);
+                pushText('\nendstream\nendobj\n');
+
+                offsets[contentObjNum] = currentOffset;
+                pushText(`${contentObjNum} 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}endstream\nendobj\n`);
+            }
+
+            const xrefOffset = currentOffset;
+            let xref = `xref\n0 ${totalObjects + 1}\n0000000000 65535 f \n`;
+            for (let id = 1; id <= totalObjects; id++) {
+                xref += `${String(offsets[id]).padStart(10, '0')} 00000 n \n`;
+            }
+
+            const trailer = `trailer\n<< /Size ${totalObjects + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+            pushText(xref + trailer);
+
+            return new Blob(chunks, { type: 'application/pdf' });
+        }
+
+        function triggerBlobDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+
+        async function downloadAsJPG() {
+            const page = getActivePage();
+            const pageIdx = getActivePageIndex();
+            if (!page.images.length) {
+                showToast('এই পেজে কোনো ছবি নেই');
+                return;
+            }
+            showToast(`পেজ ${pageIdx + 1}-এর JPG তৈরি হচ্ছে...`);
+            const { blob, actualKB } = await generatePageOptimizedResult(page, state.targetKB);
+            const fileName = state.pages.length > 1 ? `A4-Page-${pageIdx + 1}.jpg` : 'A4-Document.jpg';
+            triggerBlobDownload(blob, fileName);
+            showToast(`JPG সেভ হয়েছে (${actualKB} KB)`);
+        }
+
+        async function downloadAllAsJPG() {
+            const pagesWithContent = state.pages
+                .map((p, idx) => ({ page: p, pageNumber: idx + 1 }))
+                .filter(entry => entry.page.images.length > 0);
+
+            if (!pagesWithContent.length) {
+                showToast('কোনো পেজে ছবি বা PDF নেই');
+                return;
+            }
+
+            showToast(`${pagesWithContent.length}টি পেজের JPG সেভ হচ্ছে...`);
+            const perPageKB = state.targetKB ? Math.max(30, state.targetKB / pagesWithContent.length) : null;
+
+            for (let i = 0; i < pagesWithContent.length; i++) {
+                const { page, pageNumber } = pagesWithContent[i];
+                const { blob } = await generatePageOptimizedResult(page, perPageKB);
+                const fileName = pagesWithContent.length > 1 ? `A4-Page-${pageNumber}.jpg` : 'A4-Document.jpg';
+                triggerBlobDownload(blob, fileName);
+                await new Promise(r => setTimeout(r, 320));
+            }
+
+            showToast(`সব (${pagesWithContent.length}টি) JPG সেভ সম্পন্ন`);
+        }
+
+        async function shareBlobFile(blob, filename, mimeType, titleText, actualKB) {
+            try {
+                const file = new File([blob], filename, { type: mimeType });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: titleText });
+                    showToast(`${titleText} শেয়ার সম্পন্ন (${actualKB} KB)`);
+                    return;
+                }
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+            }
+            triggerBlobDownload(blob, filename);
+            showToast(`ডাউনলোড হয়েছে (${actualKB} KB)`);
+        }
+
+        async function shareAsJPG() {
+            const page = getActivePage();
+            const pageIdx = getActivePageIndex();
+            if (!page.images.length) {
+                showToast('শেয়ার করার আগে ছবি যোগ করুন');
+                return;
+            }
+            const { blob, actualKB } = await generatePageOptimizedResult(page, state.targetKB);
+            const fileName = state.pages.length > 1 ? `A4-Page-${pageIdx + 1}.jpg` : 'A4-Document.jpg';
+            await shareBlobFile(blob, fileName, 'image/jpeg', 'A4 JPG ছবি', actualKB);
+        }
+
+        async function downloadAsPDF() {
+            const pagesToExport = state.pages.filter(p => p.images.length > 0);
+            if (!pagesToExport.length) {
+                showToast('PDF তৈরির আগে ছবি বা PDF যোগ করুন');
+                return;
+            }
+            showToast(`${pagesToExport.length} পেজের A4 PDF তৈরি হচ্ছে...`);
+            const perPageKB = state.targetKB ? Math.max(30, state.targetKB / pagesToExport.length) : null;
+            const results = [];
+            for (const p of pagesToExport) {
+                results.push(await generatePageOptimizedResult(p, perPageKB));
+            }
+            const pdfBlob = await buildMultiPageOfflineA4PDFBlob(results);
+            const actualKB = Math.max(1, Math.round(pdfBlob.size / 1024));
+            triggerBlobDownload(pdfBlob, 'A4-Document.pdf');
+            showToast(`${pagesToExport.length} পেজের PDF সেভ হয়েছে (${actualKB} KB)`);
+        }
+
+        async function shareAsPDF() {
+            const pagesToExport = state.pages.filter(p => p.images.length > 0);
+            if (!pagesToExport.length) {
+                showToast('শেয়ার করার আগে ছবি বা PDF যোগ করুন');
+                return;
+            }
+            const perPageKB = state.targetKB ? Math.max(30, state.targetKB / pagesToExport.length) : null;
+            const results = [];
+            for (const p of pagesToExport) {
+                results.push(await generatePageOptimizedResult(p, perPageKB));
+            }
+            const pdfBlob = await buildMultiPageOfflineA4PDFBlob(results);
+            const actualKB = Math.max(1, Math.round(pdfBlob.size / 1024));
+            await shareBlobFile(pdfBlob, 'A4-Document.pdf', 'application/pdf', 'A4 PDF ডকুমেন্ট', actualKB);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const sheetEl = document.getElementById('a4-sheet');
+            if (sheetEl) {
+                sheetEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                sheetEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+                        handleMultiFileSelect({ target: { files: e.dataTransfer.files, value: '' } });
+                    }
+                });
+            }
+
+            const canvas = document.getElementById('crop-canvas');
+            canvas.addEventListener('mousedown', onCropDown);
+            window.addEventListener('mousemove', onCropMove);
+            window.addEventListener('mouseup', onCropUp);
+            canvas.addEventListener('touchstart', onCropDown, { passive: false });
+            window.addEventListener('touchmove', onCropMove, { passive: false });
+            window.addEventListener('touchend', onCropUp);
+
+            syncWidthSliderUI(getActivePage().widthInches);
+            syncQualitySliderVisual(state.sliderPercent);
+            renderPageStrip();
+            renderA4Sheet();
+        });
+    </script>
+</body>
+</html>
